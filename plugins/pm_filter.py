@@ -401,7 +401,7 @@ async def upi_payment_info(client, callback_query):
     reply_markup = InlineKeyboardMarkup(btn)
     await client.edit_message_media(
         cmd.chat.id, 
-        cmd.message.id, 
+        cmd.id, 
         InputMediaPhoto('https://graph.org/file/012b0fd51192f9e6506c0.jpg')
     )
     
@@ -424,7 +424,7 @@ async def qr_code_info(client, callback_query):
     reply_markup = InlineKeyboardMarkup(btn)
     await client.edit_message_media(
         cmd.chat.id, 
-        cmd.message_id, 
+        cmd.id, 
         InputMediaPhoto('PAYMENT_QR')
     )
     await cmd.edit(
