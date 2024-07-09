@@ -383,8 +383,8 @@ async def seasons_cb_handler(client: Client, query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(r"^season_search"))
 async def filter_seasons_cb_handler(client: Client, query: CallbackQuery):
-    _, season, key, offset, req = query.data.split("#")
     print(f"{query}")
+    _, season, key, offset, req = query.data.split("#")
     seas = int(season.split(' ' , 1)[1])
     if seas < 10:
         seas = f'S0{seas}'
