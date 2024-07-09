@@ -596,56 +596,58 @@ async def seasons_cb_handler(client: Client, query: CallbackQuery):
     
     await query.message.edit_text("<b>𝚂𝙴𝙻𝙴𝙲𝚃 𝚃𝙷𝙴 𝚂𝙴𝙰𝚂𝙾𝙽 𝚈𝙾𝚄 𝚆𝙰𝙽𝚃</b>", disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(btn))
 
+
 @Client.on_callback_query(filters.regex(r"^season_search"))
 async def filter_seasons_cb_handler(client: Client, query: CallbackQuery):
-    _, season, series_name, req = query.data.split("#")
+    _, season, key, req = query.data.split("#")
     if int(req) != query.from_user.id:
         return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
     
-    imdb = IMDb()
-    series = await imdb.search_movie(series_name)
-    if series:
-        series_id = series[0].imdb_id
-        series_details = await imdb.get_title(series_id)
-        if series_details.type == "series":
-            files, l_offset, total_results = await get_search_results(series_details, season)
-            if files:
-                temp.FILES[series_name] = files
-                settings = await get_settings(query.message.chat.id)
-                del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
-                files_link = ''
+    search = BUTTONS.get(key)
+    cap = CAP.get(key)
+    if not search:
+        await query.answer(f"Hello {query.from_user.first_name},\nSend New Request Again!", show_alert=True)
+        return 
 
-                if settings['links']:
-                    btn = []
-                    for file_num, file in enumerate(files, start=1):
-                        files_link += f"""<b>\n\n{file_num}. <a href=https://t.me/{temp.U_NAME}?start=file_{query.message.chat.id}_{file.file_id}>[{get_size(file.file_size)}] {file.file_name}</a></b>"""
-                else:
-                    btn = [[
-                        InlineKeyboardButton(text=f"📂 {get_size(file.file_size)} {file.file_name}", callback_data=f'file#{file.file_id}')
-                    ]
-                        for file in files
-                    ]
-                if settings['shortlink']:
-                    btn.insert(0,
-                        [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{query.message.chat.id}_{series_name}'))]
-                    )
-                else:
-                    btn.insert(0,
-                        [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{series_name}")]
-                    )
+    files, l_offset, total_results = await get_search_results(search, lang=season)
+    if not files:
+        await query.answer(f"sᴏʀʀʏ ɴᴏ ꜰɪʟᴇs ꜰᴏᴜɴᴅ ꜰᴏʀ sᴇᴀsᴏɴ '{season}' 😕", show_alert=1)
+        return
+    temp.FILES[key] = files
+    settings = await get_settings(query.message.chat.id)
+    del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
+    files_link = ''
 
-                if l_offset != "":
-                    btn.append(
-                        [InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
-                         InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"season_next#{req}#{series_name}#{season}#{l_offset}")]
-                    )
-                else:
-                    btn.append(
-                        [InlineKeyboardButton(text="🚸 ɴᴏ ᴍᴏʀᴇ ᴘᴀɢᴇs 🚸", callback_data="buttons")]
-                    )
-                btn.append([InlineKeyboardButton(text="⪻ ʙᴀᴄᴋ ᴛᴏ ᴍᴀɪɴ ᴘᴀɢᴇ", callback_data=f"next_{req}_{series_name}")])
-                await query.message.edit_text(cap + files_link + del_msg, disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(btn))
-
+    if settings['links']:
+        btn = []
+        for file_num, file in enumerate(files, start=1):
+            files_link += f"""<b>\n\n{file_num}. <a href=https://t.me/{temp.U_NAME}?start=file_{query.message.chat.id}_{file.file_id}>[{get_size(file.file_size)}] {file.file_name}</a></b>"""
+    else:
+        btn = [[
+            InlineKeyboardButton(text=f"📂 {get_size(file.file_size)} {file.file_name}", callback_data=f'file#{file.file_id}')
+        ]
+            for file in files
+        ]
+    if settings['shortlink']:
+        btn.insert(0,
+            [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{query.message.chat.id}_{key}'))]
+        )
+    else:
+        btn.insert(0,
+            [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{key}")]
+        )
+    
+    if l_offset != "":
+        btn.append(
+            [InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
+             InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"season_next#{req}#{key}#{season}#{l_offset}")]
+        )
+    else:
+        btn.append(
+            [InlineKeyboardButton(text="🚸 ɴᴏ ᴍᴏʀᴇ ᴘᴀɢᴇs 🚸", callback_data="buttons")]
+        )
+    btn.append([InlineKeyboardButton(text="⪻ ʙᴀᴄᴋ ᴛᴏ ᴍᴀɪɴ ᴘᴀɢᴇ", callback_data=f"next_{req}_{key}")])
+    await query.message.edit_text(cap + files_link + del_msg, disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(btn))
 
 @Client.on_callback_query(filters.regex(r"^spolling"))
 async def advantage_spoll_choker(bot, query):
