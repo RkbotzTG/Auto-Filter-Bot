@@ -20,12 +20,12 @@ REACTIONS = ["🔥", "❤️", "😍", "⚡"]
 MAX_SEASONS_PER_PAGE = 10  
 
 async def get_total_seasons(series_name):
-    series = imdb.search_movie(series_name)
-    if series:
-        series_id = series[0].imdb_id
-        series_details = await imdb.get_title(series_id)
-        if series_details.type == "series":
-            return len(series_details.seasons)
+    content = imdb.search_movie(series_name)
+    if content:
+        kind = content.get("kind")
+        if kind == "tv series":
+            seasons = content.get("number of seasons"),
+            return int(seasons)
     return 0
     
 @Client.on_callback_query(filters.regex(r"^stream"))
