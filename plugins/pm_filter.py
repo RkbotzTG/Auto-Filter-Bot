@@ -579,7 +579,7 @@ async def seasons_cb_handler(client: Client, query: CallbackQuery):
     if int(req) != query.from_user.id:
         return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
     
-    search = BUTTONS.get(key)
+    search = BUTTONS.get(series_name)
     offset = int(offset)
     total_seasons = await get_total_seasons(search)
     
