@@ -576,14 +576,12 @@ async def filter_years_cb_handler(client: Client, query: CallbackQuery):
 @Client.on_callback_query(filters.regex(r"^seasons"))
 async def seasons_cb_handler(client: Client, query: CallbackQuery):
     _, series_name, req, offset = query.data.split("#")
-    print(f"{series_name}")
-    print(f"{req}")
-    print(f"{offset}")
     if int(req) != query.from_user.id:
         return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
     
+    search = BUTTONS.get(key)
     offset = int(offset)
-    total_seasons = await get_total_seasons(series_name)  # Async call to get total seasons
+    total_seasons = await get_total_seasons(search)
     
     start_season = offset * MAX_SEASONS_PER_PAGE + 1
     end_season = min(start_season + MAX_SEASONS_PER_PAGE - 1, total_seasons)
