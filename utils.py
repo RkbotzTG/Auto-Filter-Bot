@@ -123,6 +123,17 @@ async def get_poster(query, bulk=False, id=False, file=None):
         'url':f'https://www.imdb.com/title/tt{movieid}'
     }
 
+async def get_seasons(query, year=None):
+    movieid = imdb.search_movie(title.lower(), results=10)
+    if year:
+        filtered=list(filter(lambda k: str(k.get('year')) == str(year), movieid))
+        if not filtered:
+            filtered = movieid
+    else:
+        filtered = movieid
+    movieid=list(filter(lambda k: k.get('kind') in ['tv series'], filtered))    
+    movie = imdb.get_movie(movieid)
+    return movie.get("number of seasons", 0)
 
 async def is_check_admin(bot, chat_id, user_id):
     try:
