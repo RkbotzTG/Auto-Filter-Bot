@@ -20,7 +20,7 @@ REACTIONS = ["🔥", "❤️", "😍", "⚡"]
 MAX_SEASONS_PER_PAGE = 10  
 
 async def get_total_seasons(series_name):
-    series = await imdb.search_movie(series_name)
+    series = imdb.search_movie(series_name)
     if series:
         series_id = series[0].imdb_id
         series_details = await imdb.get_title(series_id)
@@ -503,8 +503,7 @@ async def years_cb_handler(client: Client, query: CallbackQuery):
     if int(req) != query.from_user.id:
         return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
     
-    current_year = datetime.now().year
-    start_year = current_year - (int(offset) * 10)
+    start_year = datetime.now().year
     end_year = start_year - 10
     
     btn = [[InlineKeyboardButton(text=str(year), callback_data=f"year_search#{year}#{key}#{offset}#{req}")]
@@ -1227,10 +1226,7 @@ async def auto_filter(client, msg, spoll=False):
             [InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
              InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"next_{req}_{key}_{offset}")]
         )
-        btn.append(
-            [InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
-             InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"next_{req}_{key}_{offset}")]
-        )
+        
     else:
         if settings['shortlink']:
             btn.insert(0,
