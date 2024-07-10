@@ -35,8 +35,9 @@ async def get_total_seasons(series_name, year=None):
         if series:
             print(f"{series}")
             series_id = series.movieID
+            print(f"{series_id}")
             series_details = imdb.get_movie(series_id)
-            
+            print(f"{series_details}")
             if series_details.get("kind") == "tv series":
                 return series_details.get("number of seasons", 0)
     
