@@ -23,6 +23,7 @@ async def get_total_seasons(series_name):
     content = imdb.search_movie(series_name)
     if content:
         kind = content.get("kind")
+        print(f"{kind}")
         if kind == "tv series":
             seasons = content.get("number of seasons"),
             return int(seasons)
