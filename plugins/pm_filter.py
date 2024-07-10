@@ -1208,12 +1208,20 @@ async def auto_filter(client, msg, spoll=False):
                 InlineKeyboardButton("📰 ʟᴀɴɢᴜᴀɢᴇs 📰", callback_data=f"languages#{key}#{req}#0"),
                 InlineKeyboardButton("🔍 ǫᴜᴀʟɪᴛʏ", callback_data=f"quality#{key}#{req}#{offset}")]
             )
+            btn.insert(1,
+                [InlineKeyboardButton("📰 ꜱᴇᴀꜱᴏɴꜱ 📰", callback_data=f"seasons#{key}#{req}#{offset}"),
+                 InlineKeyboardButton("🔍 ʏᴇᴀʀꜱ", callback_data=f"years#{key}#{req}#{offset}")]
+            )
         else:
             btn.insert(0,
                 [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{key}"),                 
                  InlineKeyboardButton("📰 ʟᴀɴɢᴜᴀɢᴇs 📰", callback_data=f"languages#{key}#{req}#0"),
                  InlineKeyboardButton("🔍 ǫᴜᴀʟɪᴛʏ", callback_data=f"quality#{key}#{req}#{offset}")]
             )
+            btn.insert(1,
+                [InlineKeyboardButton("📰 ꜱᴇᴀꜱᴏɴꜱ 📰", callback_data=f"seasons#{key}#{req}#{offset}"),
+                 InlineKeyboardButton("🔍 ʏᴇᴀʀꜱ", callback_data=f"years#{key}#{req}#{offset}")]
+           )
 
         btn.append(
             [InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
