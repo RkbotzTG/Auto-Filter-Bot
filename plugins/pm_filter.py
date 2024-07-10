@@ -19,16 +19,30 @@ CAP = {}
 REACTIONS = ["🔥", "❤️", "😍", "⚡"]
 MAX_SEASONS_PER_PAGE = 10  
 
-async def get_total_seasons(series_name):
-    content = imdb.search_movie(series_name)
-    print(f"{content}")
-    if content:
-        kind = content.get("kind")
-        print(f"{kind}")
-        if kind == "tv series":
-            seasons = content.get("number of seasons"),
-            return int(seasons)
+
+async def get_total_seasons(series_name, year=None):
+    imdb = IMDb()
+    search_results = imdb.search_movie(series_name)
+    
+    if search_results:
+        series = None
+        if year:
+            for result in search_results:
+                if result.get('year') == year:
+                    series = result
+                    break
+        else:
+            series = search_results[0]
+        
+        if series:
+            series_id = series.movieID
+            series_details = imdb.get_movie(series_id)
+            
+            if series_details.get("kind") == "tv series":
+                return series_details.get("number of seasons", 0)
+    
     return 0
+
     
 @Client.on_callback_query(filters.regex(r"^stream"))
 async def stream_downloader(bot, query):
@@ -571,17 +585,15 @@ async def filter_years_cb_handler(client: Client, query: CallbackQuery):
     await query.message.edit_text(cap + files_link + del_msg, disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(btn))
 
 
-
-
 @Client.on_callback_query(filters.regex(r"^seasons"))
 async def seasons_cb_handler(client: Client, query: CallbackQuery):
-    _, series_name, req, offset = query.data.split("#")
+    _, series_name, req, offset, year = query.data.split("#")
     if int(req) != query.from_user.id:
         return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
     
-    search = BUTTONS.get(series_name)
     offset = int(offset)
-    total_seasons = await get_total_seasons(search)
+    year = int(year)
+    total_seasons = await get_total_seasons(series_name, year)  # Async call to get total seasons
     
     start_season = offset * MAX_SEASONS_PER_PAGE + 1
     end_season = min(start_season + MAX_SEASONS_PER_PAGE - 1, total_seasons)
@@ -590,66 +602,79 @@ async def seasons_cb_handler(client: Client, query: CallbackQuery):
            for season in range(start_season, end_season + 1)]
     
     if start_season > 1:
-        btn.append([InlineKeyboardButton(text="⪻ ᴘʀᴇᴠɪᴏᴜs", callback_data=f"seasons#{series_name}#{req}#{offset-1}")])
+        btn.append([InlineKeyboardButton(text="⪻ ᴘʀᴇᴠɪᴏᴜs", callback_data=f"seasons#{series_name}#{req}#{offset-1}#{year}")])
     if end_season < total_seasons:
-        btn.append([InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"seasons#{series_name}#{req}#{offset+1}")])
+        btn.append([InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"seasons#{series_name}#{req}#{offset+1}#{year}")])
     
+    btn.append([InlineKeyboardButton(text="⪻ Change Years", callback_data=f"season_years#{series_name}#{req}#{offset}")])
     btn.append([InlineKeyboardButton(text="⪻ ʙᴀᴄᴋ ᴛᴏ ᴍᴀɪɴ ᴘᴀɢᴇ", callback_data=f"next_{req}_{series_name}")])
     
     await query.message.edit_text("<b>𝚂𝙴𝙻𝙴𝙲𝚃 𝚃𝙷𝙴 𝚂𝙴𝙰𝚂𝙾𝙽 𝚈𝙾𝚄 𝚆𝙰𝙽𝚃</b>", disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(btn))
 
-
 @Client.on_callback_query(filters.regex(r"^season_search"))
 async def filter_seasons_cb_handler(client: Client, query: CallbackQuery):
-    _, season, key, req = query.data.split("#")
+    _, season, series_name, req = query.data.split("#")
     if int(req) != query.from_user.id:
         return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
     
-    search = BUTTONS.get(key)
-    cap = CAP.get(key)
-    if not search:
-        await query.answer(f"Hello {query.from_user.first_name},\nSend New Request Again!", show_alert=True)
-        return 
+    imdb = IMDb()
+    series = imdb.search_movie(series_name)
+    if series:
+        series_id = series[0].movieID
+        series_details = imdb.get_movie(series_id)
+        if series_details.get("kind") == "tv series":
+            files, l_offset, total_results = await get_search_results(series_details, season)
+            if files:
+                temp.FILES[series_name] = files
+                settings = await get_settings(query.message.chat.id)
+                del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
+                files_link = ''
 
-    files, l_offset, total_results = await get_search_results(search, lang=season)
-    if not files:
-        await query.answer(f"sᴏʀʀʏ ɴᴏ ꜰɪʟᴇs ꜰᴏᴜɴᴅ ꜰᴏʀ sᴇᴀsᴏɴ '{season}' 😕", show_alert=1)
-        return
-    temp.FILES[key] = files
-    settings = await get_settings(query.message.chat.id)
-    del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
-    files_link = ''
+                if settings['links']:
+                    btn = []
+                    for file_num, file in enumerate(files, start=1):
+                        files_link += f"""<b>\n\n{file_num}. <a href=https://t.me/{temp.U_NAME}?start=file_{query.message.chat.id}_{file.file_id}>[{get_size(file.file_size)}] {file.file_name}</a></b>"""
+                else:
+                    btn = [[
+                        InlineKeyboardButton(text=f"📂 {get_size(file.file_size)} {file.file_name}", callback_data=f'file#{file.file_id}')
+                    ]
+                        for file in files
+                    ]
+                if settings['shortlink']:
+                    btn.insert(0,
+                        [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{query.message.chat.id}_{series_name}'))]
+                    )
+                else:
+                    btn.insert(0,
+                        [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{series_name}")]
+                    )
 
-    if settings['links']:
-        btn = []
-        for file_num, file in enumerate(files, start=1):
-            files_link += f"""<b>\n\n{file_num}. <a href=https://t.me/{temp.U_NAME}?start=file_{query.message.chat.id}_{file.file_id}>[{get_size(file.file_size)}] {file.file_name}</a></b>"""
-    else:
-        btn = [[
-            InlineKeyboardButton(text=f"📂 {get_size(file.file_size)} {file.file_name}", callback_data=f'file#{file.file_id}')
-        ]
-            for file in files
-        ]
-    if settings['shortlink']:
-        btn.insert(0,
-            [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", url=await get_shortlink(settings['url'], settings['api'], f'https://t.me/{temp.U_NAME}?start=all_{query.message.chat.id}_{key}'))]
-        )
-    else:
-        btn.insert(0,
-            [InlineKeyboardButton("♻️ sᴇɴᴅ ᴀʟʟ ♻️", callback_data=f"send_all#{key}")]
-        )
+                if l_offset != "":
+                    btn.append(
+                        [InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
+                         InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"season_next#{req}#{series_name}#{season}#{l_offset}")]
+                    )
+                else:
+                    btn.append(
+                        [InlineKeyboardButton(text="🚸 ɴᴏ ᴍᴏʀᴇ ᴘᴀɢᴇs 🚸", callback_data="buttons")]
+                    )
+                btn.append([InlineKeyboardButton(text="⪻ ʙᴀᴄᴋ ᴛᴏ ᴍᴀɪɴ ᴘᴀɢᴇ", callback_data=f"next_{req}_{series_name}")])
+                await query.message.edit_text(cap + files_link + del_msg, disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(btn))
+
+@Client.on_callback_query(filters.regex(r"^season_years"))
+async def season_years_cb_handler(client: Client, query: CallbackQuery):
+    _, series_name, req, offset = query.data.split("#")
+    if int(req) != query.from_user.id:
+        return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
+
+    years = list(range(2024, 2014, -1))
+    btn = [[InlineKeyboardButton(text=f"{year}", callback_data=f"seasons#{series_name}#{req}#{offset}#{year}")]
+           for year in years]
+    btn.append([InlineKeyboardButton(text="⪻ ʙᴀᴄᴋ ᴛᴏ ᴍᴀɪɴ ᴘᴀɢᴇ", callback_data=f"next_{req}_{series_name}")])
     
-    if l_offset != "":
-        btn.append(
-            [InlineKeyboardButton(text=f"1/{math.ceil(int(total_results) / MAX_BTN)}", callback_data="buttons"),
-             InlineKeyboardButton(text="ɴᴇxᴛ »", callback_data=f"season_next#{req}#{key}#{season}#{l_offset}")]
-        )
-    else:
-        btn.append(
-            [InlineKeyboardButton(text="🚸 ɴᴏ ᴍᴏʀᴇ ᴘᴀɢᴇs 🚸", callback_data="buttons")]
-        )
-    btn.append([InlineKeyboardButton(text="⪻ ʙᴀᴄᴋ ᴛᴏ ᴍᴀɪɴ ᴘᴀɢᴇ", callback_data=f"next_{req}_{key}")])
-    await query.message.edit_text(cap + files_link + del_msg, disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(btn))
+    await query.message.edit_text("<b>𝚂𝙴𝙻𝙴𝙲𝚃 𝚃𝙷𝙴 𝚈𝙴𝙰𝚁 𝚈𝙾𝚄 𝚆𝙰𝙽𝚃</b>", disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(btn))
+
+
 
 @Client.on_callback_query(filters.regex(r"^spolling"))
 async def advantage_spoll_choker(bot, query):
