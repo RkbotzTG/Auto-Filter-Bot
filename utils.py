@@ -124,7 +124,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
     }
 
 async def get_seasons(query, year=None):
-    movieid = imdb.search_movie(title.lower(), results=10)
+    movieid = imdb.search_movie(query, results=10)
     if year:
         filtered=list(filter(lambda k: str(k.get('year')) == str(year), movieid))
         if not filtered:
