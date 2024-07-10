@@ -9,7 +9,7 @@ from info import STICKERS_IDS, ADMINS, URL, MAX_BTN, BIN_CHANNEL, IS_STREAM, DEL
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, ChatPermissions, InputMediaPhoto
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid, ChatAdminRequired
-from utils import get_size, is_subscribed, is_check_admin, get_wish, get_shortlink, get_verify_status, update_verify_status, get_readable_time, get_poster, temp, get_settings, save_group_settings , imdb
+from utils import get_size, is_subscribed, is_check_admin, get_wish, get_shortlink, get_verify_status, update_verify_status, get_readable_time, get_poster, get_seasons, temp, get_settings, save_group_settings , imdb
 from database.users_chats_db import db
 from database.ia_filterdb import Media, get_file_details, get_search_results,delete_files
 from fuzzywuzzy import process
@@ -21,27 +21,9 @@ MAX_SEASONS_PER_PAGE = 10
 
 
 async def get_total_seasons(series_name, year=None):
-    search_results = imdb.search_movie(series_name)
-    print(f"{search_results}")
-    if search_results:
-        series = None
-        if year:
-            for result in search_results:
-                if result.get('year') == year:
-                    series = result
-        else:
-            series = search_results[0]
-        
-        if series:
-            print(f"{series}")
-            series_id = series.movieID
-            print(f"{series_id}")
-            series_details = imdb.get_movie(series_id)
-            print(f"{series_details}")
-            if series_details.get("kind") == "tv series":
-                return series_details.get("number of seasons", 0)
-    
-    return 0
+    imdb = await get_seasons(search, year) 
+    seasons=imdb["seasons"]
+    return int(seasons) 
 
     
 @Client.on_callback_query(filters.regex(r"^stream"))
