@@ -22,18 +22,18 @@ MAX_SEASONS_PER_PAGE = 10
 
 async def get_total_seasons(series_name, year=None):
     search_results = imdb.search_movie(series_name)
-    
+    print(f"{search_results}")
     if search_results:
         series = None
         if year:
             for result in search_results:
                 if result.get('year') == year:
                     series = result
-                    break
         else:
             series = search_results[0]
         
         if series:
+            print(f"{series}")
             series_id = series.movieID
             series_details = imdb.get_movie(series_id)
             
