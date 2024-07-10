@@ -592,8 +592,7 @@ async def seasons_cb_handler(client: Client, query: CallbackQuery):
         return await query.answer(f"Hello {query.from_user.first_name},\nDon't Click Other Results!", show_alert=True)
     
     offset = int(offset)
-    year = int(year)
-    total_seasons = await get_total_seasons(series_name, year)  # Async call to get total seasons
+    total_seasons = await get_total_seasons(series_name)
     
     start_season = offset * MAX_SEASONS_PER_PAGE + 1
     end_season = min(start_season + MAX_SEASONS_PER_PAGE - 1, total_seasons)
